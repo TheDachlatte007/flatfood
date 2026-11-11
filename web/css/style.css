@@ -107,17 +107,66 @@ body {
 }
 
 /* Navigation */
-.nav-bar {
+.desktop-nav-bar {
+  display: none;
+}
+
+.mobile-nav-bar {
+  display: flex;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   background: var(--surface);
   border-top: 1px solid var(--border-light);
-  display: flex;
   justify-content: space-around;
   padding: 6px 8px env(safe-area-inset-bottom, 6px);
-  z-index: 50;
+  z-index: 90;
+}
+
+/* Tag Selector Pills */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.tag-pill:hover {
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+.tag-pill.active {
+  background: var(--primary-subtle);
+  border-color: var(--primary);
+  color: #4ade80;
+}
+
+.tag-pill .pill-check {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.tag-pill.active .pill-check {
+  background: var(--primary);
+  color: #fff;
 }
 
 .nav-link {
@@ -588,7 +637,11 @@ body {
   body {
     padding-bottom: 16px;
   }
-  .nav-bar {
+  .mobile-nav-bar {
+    display: none;
+  }
+  .desktop-nav-bar {
+    display: flex;
     position: static;
     border-top: none;
     background: transparent;

@@ -102,13 +102,17 @@ async function downscaleImage(file, maxDimension = 1600) {
 
 function navigate(viewName) {
   const clean = (viewName || 'dashboard').replace('#', '');
+  
+  // Instant visual switch (0ms delay)
   document.querySelectorAll('.view-panel').forEach((el) => {
     el.classList.toggle('active', el.id === `view-${clean}`);
   });
   document.querySelectorAll('.nav-link').forEach((el) => {
     el.classList.toggle('active', el.dataset.view === clean);
   });
+  window.scrollTo({ top: 0, behavior: 'instant' });
 
+  // Load view data in background
   if (clean === 'dashboard') loadDashboard();
   if (clean === 'receipts') loadReceipts();
   if (clean === 'products') loadProducts();
@@ -116,7 +120,10 @@ function navigate(viewName) {
   if (clean === 'settings') loadSettings();
 }
 
-window.addEventListener('hashchange', () => navigate(window.location.hash));
+window.addEventListener('hashchange', (e) => {
+  e.preventDefault();
+  navigate(window.location.hash);
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
   setupModals();
@@ -812,9 +819,50 @@ function openPersonModal(person = null) {
   document.getElementById('person-id').value = person ? person.id : '';
   document.getElementById('person-name').value = person ? person.name : '';
   document.getElementById('person-color').value = person ? person.color : '#10b981';
-  document.getElementById('person-tags').value = person ? (person.tags || []).join(', ') : '';
   document.getElementById('modal-person-title').textContent = person ? 'Mitbewohner bearbeiten' : 'Neuer Mitbewohner';
+  
+  const currentTags = person ? (person.tags || []) : [];
+  renderPersonTagsSelector(currentTags);
+  
   openModal('modal-person');
+}
+
+function renderPersonTagsSelector(selectedTags = []) {
+  const container = document.getElementById('person-tags-selector');
+  container.innerHTML = '';
+
+  // Get all known tags from categories (e.g. fleisch, alkohol, milch, ei)
+  const knownTags = new Set(['fleisch', 'alkohol', 'milch', 'ei']);
+  state.categories.forEach((c) => {
+    if (c.required_tag) knownTags.add(c.required_tag);
+  });
+  selectedTags.forEach((t) => knownTags.add(t));
+
+  const currentSet = new Set(selectedTags);
+
+  knownTags.forEach((tag) => {
+    const isSelected = currentSet.has(tag);
+    const pill = document.createElement('div');
+    pill.className = `tag-pill ${isSelected ? 'active' : ''}`;
+    pill.dataset.tag = tag;
+    pill.innerHTML = `<span class="pill-check">${isSelected ? '✓' : '+'}</span> <span>${tag}</span>`;
+
+    pill.onclick = () => {
+      if (currentSet.has(tag)) {
+        currentSet.delete(tag);
+        pill.classList.remove('active');
+        pill.querySelector('.pill-check').textContent = '+';
+      } else {
+        currentSet.add(tag);
+        pill.classList.add('active');
+        pill.querySelector('.pill-check').textContent = '✓';
+      }
+      document.getElementById('person-tags').value = Array.from(currentSet).join(', ');
+    };
+    container.appendChild(pill);
+  });
+
+  document.getElementById('person-tags').value = Array.from(currentSet).join(', ');
 }
 
 function openPaymentModal(fromId = '', toId = '', amount = '') {
@@ -838,6 +886,34 @@ function openPaymentModal(fromId = '', toId = '', amount = '') {
 
 function setupEventListeners() {
   setupCaptureHandlers();
+
+  // Instant Nav Link handling (eliminates mobile anchor scroll jump and lag)
+  document.querySelectorAll('.nav-link, .brand').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const view = el.dataset.view || 'dashboard';
+      if (window.location.hash !== `#${view}`) {
+        history.replaceState(null, '', `#${view}`);
+      }
+      navigate(view);
+    });
+  });
+
+  // Custom Tag addition in person modal
+  document.getElementById('btn-add-custom-tag').onclick = () => {
+    const input = document.getElementById('person-custom-tag');
+    const val = input.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (!val) return;
+    const current = (document.getElementById('person-tags').value || '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    if (!current.includes(val)) {
+      current.push(val);
+      renderPersonTagsSelector(current);
+    }
+    input.value = '';
+  };
 
   // Month selector change
   document.getElementById('month-selector').onchange = (e) => {

@@ -15,12 +15,12 @@
   <!-- Top App Header -->
   <header class="app-header">
     <div style="display:flex; align-items:center; gap:16px;">
-      <a href="#dashboard" class="brand">
+      <a href="#dashboard" class="brand" data-view="dashboard">
         <img src="/static/icons/icon.svg" alt="Flatfood">
         <span>Flatfood</span>
       </a>
-      <!-- Desktop Navigation embedded in header -->
-      <nav class="nav-bar">
+      <!-- Desktop Navigation -->
+      <nav class="nav-bar desktop-nav-bar">
         <a href="#dashboard" class="nav-link active" data-view="dashboard">
           <span class="nav-icon">📊</span>
           <span>Monat</span>
@@ -53,6 +53,34 @@
       <button id="btn-refresh" class="btn-icon" title="Aktualisieren">🔄</button>
     </div>
   </header>
+
+  <!-- Mobile Bottom Navigation (Isolated from sticky header) -->
+  <nav class="nav-bar mobile-nav-bar">
+    <a href="#dashboard" class="nav-link active" data-view="dashboard">
+      <span class="nav-icon">📊</span>
+      <span>Monat</span>
+    </a>
+    <a href="#capture" class="nav-link" data-view="capture">
+      <span class="nav-icon">📸</span>
+      <span>Erfassen</span>
+    </a>
+    <a href="#receipts" class="nav-link" data-view="receipts">
+      <span class="nav-icon">🧾</span>
+      <span>Belege</span>
+    </a>
+    <a href="#products" class="nav-link" data-view="products">
+      <span class="nav-icon">🥦</span>
+      <span>Produkte</span>
+    </a>
+    <a href="#stats" class="nav-link" data-view="stats">
+      <span class="nav-icon">📈</span>
+      <span>Statistik</span>
+    </a>
+    <a href="#settings" class="nav-link" data-view="settings">
+      <span class="nav-icon">⚙️</span>
+      <span>Setup</span>
+    </a>
+  </nav>
 
   <!-- Main View Container -->
   <main class="main-container">
@@ -397,11 +425,18 @@
           <input type="color" id="person-color" class="form-control" value="#10b981" style="height:40px; padding:2px;">
         </div>
         <div class="form-group">
-          <label class="form-label">Profil-Tags (durch Komma getrennt)</label>
-          <input type="text" id="person-tags" class="form-control" placeholder="z. B. fleisch, alkohol, milch">
-          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
-            Personen zahlen nur für Kategorien mit einem Pflicht-Tag mit, wenn sie diesen Tag besitzen! Daniel = keine tierischen Tags.
+          <label class="form-label">Ernährungs- & Profil-Tags</label>
+          <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px;">
+            Wähle aus, für welche speziellen Kategorien diese Person mitzahlt. Für allgemeine Posten (Basis/Vegan, Drogerie/Haushalt) zahlen alle automatisch mit. (Tipp: Daniel = alle abgewählt lassen).
           </div>
+          <!-- Clickable Tag Pills -->
+          <div id="person-tags-selector" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;"></div>
+          <!-- Add custom tag -->
+          <div style="display:flex; gap:6px; align-items:center;">
+            <input type="text" id="person-custom-tag" class="form-control" placeholder="Eigener Tag (optional)..." style="font-size:0.85rem;">
+            <button type="button" id="btn-add-custom-tag" class="btn btn-secondary btn-sm" style="white-space:nowrap;">➕ Hinzufügen</button>
+          </div>
+          <input type="hidden" id="person-tags">
         </div>
       </div>
       <div class="modal-footer">
