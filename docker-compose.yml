@@ -1,7 +1,6 @@
 services:
   flatfood:
-    build: .
-    image: flatfood:latest
+    image: ghcr.io/thedachlatte007/flatfood:latest
     container_name: flatfood
     restart: unless-stopped
     ports:
@@ -10,7 +9,6 @@ services:
       - DATA_DIR=/data
       - PARSER=auto
       - GEMINI_MODEL=gemini-3.8-flash
-      # Optional: set GEMINI_API_KEY in .env
     env_file:
       - path: .env
         required: false
