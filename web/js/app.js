@@ -474,6 +474,7 @@ function renderReviewItemsTable(items) {
   });
 
   tbody.querySelectorAll('.item-price').forEach((el) => el.oninput = recalculateReviewSum);
+  document.getElementById('review-total').oninput = recalculateReviewSum;
   tbody.querySelectorAll('.btn-delete-item').forEach((btn) => {
     btn.onclick = (e) => {
       e.target.closest('tr').remove();
@@ -485,7 +486,20 @@ function renderReviewItemsTable(items) {
 function recalculateReviewSum() {
   const prices = Array.from(document.querySelectorAll('.item-price')).map((el) => parseCents(el.value));
   const sum = prices.reduce((a, b) => a + b, 0);
-  document.getElementById('review-items-sum').textContent = fmtEur(sum);
+  const total = parseCents(document.getElementById('review-total').value);
+  
+  const sumElem = document.getElementById('review-items-sum');
+  if (total > 0) {
+    const diff = sum - total;
+    if (diff === 0) {
+      sumElem.innerHTML = `<span style="color:#22c55e;">${fmtEur(sum)} ✓</span>`;
+    } else {
+      const sign = diff > 0 ? '+' : '';
+      sumElem.innerHTML = `<span style="color:#f87171;">${fmtEur(sum)}</span> <span style="font-size:0.75rem; color:#f87171;">(${sign}${fmtEur(diff)})</span>`;
+    }
+  } else {
+    sumElem.textContent = fmtEur(sum);
+  }
 }
 
 function getReviewPayload() {
@@ -546,7 +560,10 @@ async function loadReceipts() {
 
     div.innerHTML = `
       <div>
-        <div style="font-weight:700; font-size:0.96rem;">${escapeHtml(r.store || 'Unbekanntes Geschäft')}</div>
+        <div style="font-weight:700; font-size:0.96rem; display:flex; align-items:center; gap:6px;">
+          ${escapeHtml(r.store || 'Unbekanntes Geschäft')}
+          ${r.has_image ? '<span title="Foto vorhanden">🖼️</span>' : ''}
+        </div>
         <div style="font-size:0.8rem; color:var(--text-muted); display:flex; gap:8px; margin-top:2px;">
           <span>📅 ${r.date || r.created_at.slice(0, 10)}</span>
           <span>👤 ${r.buyer_name || 'Kein Käufer'}</span>

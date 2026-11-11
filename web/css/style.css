@@ -518,6 +518,7 @@ body {
 
 .items-table {
   width: 100%;
+  min-width: 480px;
   border-collapse: collapse;
   font-size: 0.86rem;
   margin-bottom: 12px;
