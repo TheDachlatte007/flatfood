@@ -13,15 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create non-root user and persistent volume directory
-RUN useradd -u 1000 -m -s /bin/bash appuser && \
-    mkdir -p /data /app && \
-    chown -R appuser:appuser /data /app
+RUN mkdir -p /data /app
 
-COPY --chown=appuser:appuser app/ ./app/
-COPY --chown=appuser:appuser web/ ./web/
-
-USER appuser
+COPY app/ ./app/
+COPY web/ ./web/
 
 EXPOSE 8080
 
