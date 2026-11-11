@@ -1,0 +1,18 @@
+services:
+  flatfood:
+    build: .
+    image: flatfood:latest
+    container_name: flatfood
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DATA_DIR=/data
+      - PARSER=auto
+      - GEMINI_MODEL=gemini-3.8-flash
+      # Optional: set GEMINI_API_KEY in .env
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./data:/data

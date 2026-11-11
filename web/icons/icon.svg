@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16a34a" />
+      <stop offset="100%" stop-color="#0d9488" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#grad)"/>
+  <!-- Receipt icon inside -->
+  <path d="M160 110 h192 a16 16 0 0 1 16 16 v270 l-24 -16 l-24 16 l-24 -16 l-24 16 l-24 -16 l-24 16 l-24 -16 l-24 16 l-24 -16 v-270 a16 16 0 0 1 16 -16 z" fill="#ffffff" opacity="0.95"/>
+  <!-- Lines on receipt -->
+  <rect x="190" y="160" width="132" height="16" rx="8" fill="#16a34a"/>
+  <rect x="190" y="196" width="90" height="12" rx="6" fill="#94a3b8"/>
+  <rect x="190" y="224" width="110" height="12" rx="6" fill="#94a3b8"/>
+  <rect x="190" y="252" width="80" height="12" rx="6" fill="#94a3b8"/>
+  <line x1="190" y1="284" x2="322" y2="284" stroke="#cbd5e1" stroke-width="3" stroke-dasharray="6,4"/>
+  <!-- Apple / Leaf badge in corner -->
+  <circle cx="340" cy="340" r="56" fill="#0f172a"/>
+  <path d="M335 315 C345 310, 360 320, 355 335 C350 350, 335 365, 330 365 C325 365, 315 350, 320 335 C323 325, 330 317, 335 315 Z" fill="#22c55e"/>
+  <path d="M338 312 C342 300, 350 296, 355 295" stroke="#86efac" stroke-width="4" stroke-linecap="round" fill="none"/>
+</svg>

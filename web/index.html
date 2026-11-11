@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Flatfood — WG-Küchenkasse</title>
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#16a34a">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/vendor/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <a href="#dashboard" class="brand">
+        <img src="/static/icons/icon.svg" alt="Flatfood">
+        <span>Flatfood</span>
+      </a>
+      <!-- Desktop Navigation embedded in header -->
+      <nav class="nav-bar">
+        <a href="#dashboard" class="nav-link active" data-view="dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Monat</span>
+        </a>
+        <a href="#capture" class="nav-link" data-view="capture">
+          <span class="nav-icon">📸</span>
+          <span>Erfassen</span>
+        </a>
+        <a href="#receipts" class="nav-link" data-view="receipts">
+          <span class="nav-icon">🧾</span>
+          <span>Belege</span>
+        </a>
+        <a href="#products" class="nav-link" data-view="products">
+          <span class="nav-icon">🥦</span>
+          <span>Produkte</span>
+        </a>
+        <a href="#stats" class="nav-link" data-view="stats">
+          <span class="nav-icon">📈</span>
+          <span>Statistik</span>
+        </a>
+        <a href="#settings" class="nav-link" data-view="settings">
+          <span class="nav-icon">⚙️</span>
+          <span>Setup</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="header-controls">
+      <select id="month-selector" class="month-select" title="Abrechnungsmonat auswählen"></select>
+      <button id="btn-refresh" class="btn-icon" title="Aktualisieren">🔄</button>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="main-container">
+
+    <!-- 1. DASHBOARD VIEW -->
+    <section id="view-dashboard" class="view-panel active">
+      <div id="first-run-banner" style="display:none;" class="alert alert-info">
+        <span>👋 Willkommen! Bitte lege unter <a href="#settings" style="color:inherit; font-weight:bold;">Setup</a> zuerst eure Mitbewohner an.</span>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">Kosten Pool</span>
+          <span id="kpi-total" class="kpi-val">0,00 €</span>
+          <span id="kpi-receipts-count" class="kpi-sub">0 Belege</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">€ / Tag (TmM)</span>
+          <span id="kpi-tmm" class="kpi-val">-</span>
+          <span id="kpi-tmm-ref" class="kpi-sub">Ref: 7,26 €</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Tage Gesamt</span>
+          <span id="kpi-days" class="kpi-val">0</span>
+          <span class="kpi-sub">Anwesenheit</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Status</span>
+          <span id="kpi-status" class="kpi-val" style="font-size:1.05rem;">Offen</span>
+          <span id="kpi-status-sub" class="kpi-sub">Abrechnung</span>
+        </div>
+      </div>
+
+      <!-- Settlement Transfers -->
+      <div class="card">
+        <div class="card-title">
+          <span>🤝 Wer zahlt wem?</span>
+          <button id="btn-month-actions" class="btn btn-secondary btn-sm">Monat-Aktionen ▾</button>
+        </div>
+        <div id="transfer-list" class="transfer-list">
+          <div style="color:var(--text-muted); font-size:0.9rem; padding:8px;">Alles ausgeglichen oder noch keine Belege.</div>
+        </div>
+      </div>
+
+      <!-- Persons Cards -->
+      <div class="card">
+        <div class="card-title">
+          <span>👥 Mitbewohner & Salden</span>
+          <div style="display:flex; gap:6px;">
+            <button id="btn-edit-days" class="btn btn-secondary btn-sm">📅 Tage eintragen</button>
+            <button id="btn-copy-days" class="btn btn-secondary btn-sm" title="Vormonatstage übernehmen">Vormonat</button>
+          </div>
+        </div>
+        <div id="person-cards" class="person-cards"></div>
+      </div>
+
+      <!-- Category Totals -->
+      <div class="card">
+        <div class="card-title">Kosten nach Kategorien</div>
+        <div id="category-bars" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+    </section>
+
+    <!-- 2. CAPTURE / REVIEW VIEW -->
+    <section id="view-capture" class="view-panel">
+      <!-- Upload Box -->
+      <div id="capture-upload-box" class="card">
+        <div class="card-title">Beleg fotografieren oder hochladen</div>
+        <div id="dropzone" class="dropzone">
+          <div class="dropzone-icon">📷</div>
+          <div style="font-weight:600; font-size:1.05rem;">Foto aufnehmen oder hierher ziehen</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">Unterstützt Kamera-Direktaufnahme, JPEG, PNG, WebP</div>
+          <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none;">
+          <div style="display:flex; gap:10px; margin-top:8px;">
+            <button id="btn-camera" class="btn btn-primary">📸 Foto / Datei</button>
+            <button id="btn-manual-receipt" class="btn btn-secondary">✏️ Manuell ohne Foto</button>
+          </div>
+        </div>
+        <div id="upload-spinner" style="display:none; text-align:center; padding:20px;">
+          <div style="font-size:1.5rem;">⏳</div>
+          <div style="font-weight:600; margin-top:6px;">Lese Kassenzettel per KI / Regel-Engine...</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">Positionen werden extrahiert und gelernt</div>
+        </div>
+      </div>
+
+      <!-- Review Editor (hidden until receipt is loaded) -->
+      <div id="review-container" style="display:none;">
+        <div class="card">
+          <div class="card-title">
+            <span id="review-title">Beleg prüfen & bearbeiten</span>
+            <span id="review-status-badge" class="tag-badge">Entwurf</span>
+          </div>
+
+          <!-- Alert area for duplicates or sum mismatch -->
+          <div id="review-alerts"></div>
+
+          <!-- Header Inputs -->
+          <div class="review-header">
+            <div class="form-group">
+              <label class="form-label">Laden / Geschäft</label>
+              <input type="text" id="review-store" class="form-control" placeholder="z. B. Edeka, Rewe, dm">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kaufdatum</label>
+              <input type="date" id="review-date" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Käufer / Bezahlt von</label>
+              <select id="review-buyer" class="form-control"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bon-Gesamtbetrag (€)</label>
+              <input type="number" id="review-total" class="form-control" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+
+          <!-- Items Table -->
+          <div style="overflow-x:auto;">
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th style="width:40%;">Posten</th>
+                  <th style="width:12%;">Preis (€)</th>
+                  <th style="width:30%;">Kategorie</th>
+                  <th style="width:18%;">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody id="review-items-body"></tbody>
+            </table>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            <button id="btn-add-item" class="btn btn-secondary btn-sm">➕ Posten hinzufügen</button>
+            <div style="font-size:0.95rem; font-weight:700;">
+              Summe Posten: <span id="review-items-sum">0,00 €</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
+            <button id="btn-confirm-receipt" class="btn btn-primary" style="flex:1;">
+              ✅ Bestätigen & Zuordnungen lernen
+            </button>
+            <button id="btn-save-draft" class="btn btn-secondary">💾 Als Entwurf sichern</button>
+            <button id="btn-view-image" class="btn btn-secondary" style="display:none;">🖼️ Foto ansehen</button>
+            <button id="btn-delete-review" class="btn btn-danger">🗑️ Löschen</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. RECEIPTS LIST VIEW -->
+    <section id="view-receipts" class="view-panel">
+      <div class="card">
+        <div class="card-title">
+          <span>🧾 Belege</span>
+          <span id="receipts-count-badge" class="tag-badge">0</span>
+        </div>
+        <!-- Filters -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-bottom:14px;">
+          <input type="text" id="filter-receipt-q" class="form-control" placeholder="Suche (Laden, Posten)...">
+          <select id="filter-receipt-buyer" class="form-control">
+            <option value="">Alle Käufer</option>
+          </select>
+          <select id="filter-receipt-status" class="form-control">
+            <option value="">Alle Status</option>
+            <option value="confirmed">Bestätigt</option>
+            <option value="draft">Entwurf</option>
+          </select>
+        </div>
+        <div id="receipts-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+    </section>
+
+    <!-- 4. PRODUCTS (RULES CATALOG) VIEW -->
+    <section id="view-products" class="view-panel">
+      <div class="card">
+        <div class="card-title">
+          <span>🥦 Produkt-Datenbank & Regeln</span>
+          <div style="display:flex; gap:6px;">
+            <button id="btn-new-product" class="btn btn-primary btn-sm">➕ Neu</button>
+            <button id="btn-export-csv" class="btn btn-secondary btn-sm">Export CSV</button>
+            <button id="btn-reset-seed" class="btn btn-secondary btn-sm" title="Fehlende Standard-Muster nachladen">Seed nachladen</button>
+          </div>
+        </div>
+        <!-- Search & Filter -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-bottom:12px;">
+          <input type="text" id="filter-product-q" class="form-control" placeholder="Muster suchen...">
+          <select id="filter-product-cat" class="form-control">
+            <option value="">Alle Kategorien</option>
+          </select>
+          <select id="filter-product-flag" class="form-control">
+            <option value="">Alle Flags</option>
+            <option value="sure">Sicher</option>
+            <option value="review">Review nötig</option>
+          </select>
+          <select id="filter-product-source" class="form-control">
+            <option value="">Alle Quellen</option>
+            <option value="manual">Manuell / Korrigiert</option>
+            <option value="learned">Gelernt</option>
+            <option value="seed">Standard-Seed</option>
+          </select>
+        </div>
+        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">
+          Gefunden: <span id="products-count">0</span> Regeln
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Muster</th>
+                <th>Kategorie</th>
+                <th>Flag</th>
+                <th>Quelle</th>
+                <th>Treffer</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="products-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. STATS VIEW -->
+    <section id="view-stats" class="view-panel">
+      <div class="card">
+        <div class="card-title">📈 Ausgaben- & TmM-Verlauf</div>
+        <div style="height:260px; position:relative;">
+          <canvas id="chart-tmm"></canvas>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+        <div class="card">
+          <div class="card-title">Kategorien-Verteilung</div>
+          <div style="height:220px; position:relative;">
+            <canvas id="chart-categories"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top Geschäfte</div>
+          <div id="stats-stores-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. SETTINGS VIEW -->
+    <section id="view-settings" class="view-panel">
+      <!-- Persons Setup -->
+      <div class="card">
+        <div class="card-title">
+          <span>👥 Mitbewohner verwalten</span>
+          <button id="btn-add-person" class="btn btn-primary btn-sm">➕ Mitbewohner anlegen</button>
+        </div>
+        <div id="settings-persons-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
+      <!-- Categories Setup -->
+      <div class="card">
+        <div class="card-title">
+          <span>🏷️ Kategorien & Pflicht-Tags</span>
+        </div>
+        <div id="settings-categories-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
+      <!-- Backup & Danger Zone -->
+      <div class="card">
+        <div class="card-title">💾 Backup & Datensicherheit</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a href="/api/backup/sqlite" class="btn btn-secondary">⬇️ SQLite Datenbank herunterladen</a>
+          <a href="/api/backup/json" target="_blank" class="btn btn-secondary">⬇️ JSON Export</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODALS -->
+  <!-- 1. Modal: Presence Days -->
+  <div id="modal-days" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-days-title">Anwesenheitstage eintragen</h3>
+        <button class="btn-icon modal-close">✕</button>
+      </div>
+      <div class="modal-body" id="modal-days-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close">Abbrechen</button>
+        <button id="btn-save-days" class="btn btn-primary">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Modal: Payment Settlement -->
+  <div id="modal-payment" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Ausgleichszahlung erfassen</h3>
+        <button class="btn-icon modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Von (Schuldner)</label>
+          <select id="pay-from" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">An (Gläubiger)</label>
+          <select id="pay-to" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Betrag (€)</label>
+          <input type="number" id="pay-amount" class="form-control" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notiz / Zahlungsart</label>
+          <input type="text" id="pay-note" class="form-control" placeholder="z. B. PayPal, Überweisung">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close">Abbrechen</button>
+        <button id="btn-submit-payment" class="btn btn-primary">Zahlung verbuchen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Modal: Person Editor -->
+  <div id="modal-person" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-person-title">Mitbewohner</h3>
+        <button class="btn-icon modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="person-id">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" id="person-name" class="form-control" placeholder="z. B. Daniel">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Farbe</label>
+          <input type="color" id="person-color" class="form-control" value="#10b981" style="height:40px; padding:2px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Profil-Tags (durch Komma getrennt)</label>
+          <input type="text" id="person-tags" class="form-control" placeholder="z. B. fleisch, alkohol, milch">
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
+            Personen zahlen nur für Kategorien mit einem Pflicht-Tag mit, wenn sie diesen Tag besitzen! Daniel = keine tierischen Tags.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close">Abbrechen</button>
+        <button id="btn-save-person" class="btn btn-primary">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Modal: Product Rule Editor -->
+  <div id="modal-product" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-product-title">Produkt-Regel</h3>
+        <button class="btn-icon modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="product-id">
+        <div class="form-group">
+          <label class="form-label">Muster / Artikelname</label>
+          <input type="text" id="product-pattern" class="form-control" placeholder="z. B. Haferdrink Vanille">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategorie</label>
+          <select id="product-category" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Flag</label>
+          <select id="product-flag" class="form-control">
+            <option value="sure">Sicher (wird direkt zugeordnet)</option>
+            <option value="review">Review (im Bon zur Prüfung markieren)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Laden-Einschränkung (optional)</label>
+          <input type="text" id="product-store" class="form-control" placeholder="leer = für alle Läden gültig">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close">Abbrechen</button>
+        <button id="btn-save-product" class="btn btn-primary">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Modal: Image Viewer -->
+  <div id="modal-image" class="modal-backdrop">
+    <div class="modal" style="max-width:800px;">
+      <div class="modal-header">
+        <h3>Original Kassenbon</h3>
+        <button class="btn-icon modal-close">✕</button>
+      </div>
+      <div class="modal-body" style="text-align:center; padding:10px;">
+        <img id="modal-img-elem" src="" alt="Bon" style="max-width:100%; max-height:75vh; border-radius:8px;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
