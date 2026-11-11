@@ -359,9 +359,16 @@
       <!-- Backup & Danger Zone -->
       <div class="card">
         <div class="card-title">💾 Backup & Datensicherheit</div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;">
+          Lade die gesamte SQLite-Datenbank mit 1 Klick auf deinen PC herunter oder stelle einen früheren Stand per Upload sofort wieder her.
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
           <a href="/api/backup/sqlite" class="btn btn-secondary">⬇️ SQLite Datenbank herunterladen</a>
           <a href="/api/backup/json" target="_blank" class="btn btn-secondary">⬇️ JSON Export</a>
+          <button id="btn-restore-db" class="btn btn-secondary" style="border-color:var(--warning); color:#fde68a;">
+            ⬆️ Backup wiederherstellen (.db)
+          </button>
+          <input type="file" id="restore-file-input" accept=".db,.sqlite,.sqlite3" style="display:none;">
         </div>
       </div>
     </section>

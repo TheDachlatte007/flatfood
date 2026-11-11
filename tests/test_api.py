@@ -135,3 +135,22 @@ def test_product_rules_crud(client):
     r = client.get("/api/products/export-csv")
     assert r.status_code == 200
     assert "haferdrink vanille" in r.text.lower()
+
+
+def test_backup_sqlite_download_and_restore(client):
+    # 1. Download active SQLite backup
+    r = client.get("/api/backup/sqlite")
+    assert r.status_code == 200
+    db_bytes = r.content
+    assert db_bytes.startswith(b"SQLite format 3\000")
+
+    # 2. Try restore with invalid file (should fail)
+    files = {"file": ("corrupt.db", b"not-a-sqlite-file", "application/x-sqlite3")}
+    r_bad = client.post("/api/backup/restore", files=files)
+    assert r_bad.status_code == 400
+
+    # 3. Restore valid backup
+    files_good = {"file": ("backup.db", db_bytes, "application/x-sqlite3")}
+    r_good = client.post("/api/backup/restore", files=files_good)
+    assert r_good.status_code == 200
+    assert r_good.json()["status"] == "ok"

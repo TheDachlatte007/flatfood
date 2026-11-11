@@ -1222,6 +1222,36 @@ function setupEventListeners() {
   document.getElementById('btn-export-csv').onclick = () => {
     window.location.href = '/api/products/export-csv';
   };
+
+  // SQLite Database Restore
+  const btnRestore = document.getElementById('btn-restore-db');
+  const restoreFileInput = document.getElementById('restore-file-input');
+  if (btnRestore && restoreFileInput) {
+    btnRestore.onclick = () => restoreFileInput.click();
+    restoreFileInput.onchange = async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (!confirm(`⚠️ ACHTUNG: Das Wiederherstellen von "${file.name}" überschreibt den aktuellen Stand mit der Backup-Datei. Eine Sicherheitskopie der aktuellen Datenbank wird automatisch angelegt. Fortfahren?`)) {
+        restoreFileInput.value = '';
+        return;
+      }
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        toast('Wiederherstellung läuft...', 'info');
+        const res = await api('/api/backup/restore', {
+          method: 'POST',
+          body: formData
+        });
+        toast(res.message || 'Datenbank erfolgreich wiederhergestellt!', 'success');
+        setTimeout(() => window.location.reload(), 1200);
+      } catch (err) {
+        toast('Fehler beim Wiederherstellen: ' + err.message, 'error');
+      } finally {
+        restoreFileInput.value = '';
+      }
+    };
+  }
 }
 
 function escapeHtml(str) {

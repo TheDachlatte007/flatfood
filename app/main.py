@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import datetime as dt
 import hashlib
 import io
 import json
@@ -800,6 +801,64 @@ def api_backup_sqlite():
         media_type="application/x-sqlite3",
         filename=f"flatfood_backup_{dt.date.today().isoformat()}.db",
     )
+
+
+@app.post("/api/backup/restore", dependencies=[Depends(verify_pin)])
+async def api_restore_sqlite(file: UploadFile = File(...)):
+    contents = await file.read()
+    if len(contents) < 100:
+        raise HTTPException(400, "Datei ist zu klein oder leer.")
+    if not contents.startswith(b"SQLite format 3\000"):
+        raise HTTPException(400, "Ungültiges Dateiformat. Es muss eine SQLite .db Datei sein.")
+
+    temp_path = settings.data_dir / "restore_test.db"
+    temp_path.write_bytes(contents)
+
+    try:
+        import sqlite3
+        test_conn = sqlite3.connect(str(temp_path))
+        check = test_conn.execute("PRAGMA integrity_check").fetchone()[0]
+        if check != "ok":
+            test_conn.close()
+            temp_path.unlink(missing_ok=True)
+            raise HTTPException(400, f"Datenbank-Integritätsprüfung fehlgeschlagen: {check}")
+
+        tables = {r[0] for r in test_conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+        required = {"person", "category", "receipt", "month"}
+        missing = required - tables
+        if missing:
+            test_conn.close()
+            temp_path.unlink(missing_ok=True)
+            raise HTTPException(400, f"Backup-Datei ist unvollständig (Tabellen fehlen: {', '.join(missing)}).")
+        test_conn.close()
+    except Exception as e:
+        if temp_path.is_file():
+            temp_path.unlink(missing_ok=True)
+        if isinstance(e, HTTPException):
+            raise
+        raise HTTPException(400, f"Fehler beim Überprüfen der Backup-Datei: {e}")
+
+    # Safely create backup copy of currently active database before swapping
+    if settings.db_path.is_file():
+        backup_existing = settings.data_dir / f"flatfood_pre_restore_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+        shutil.copy2(settings.db_path, backup_existing)
+
+    # Move restored database into place
+    shutil.move(temp_path, settings.db_path)
+
+    # Clean up stale WAL / SHM files if any
+    for suffix in ("-wal", "-shm"):
+        wal_file = settings.data_dir / f"{settings.db_path.name}{suffix}"
+        if wal_file.is_file():
+            try:
+                wal_file.unlink()
+            except OSError:
+                pass
+
+    # Ensure schema migrations if any
+    init_db(settings.db_path, None)
+
+    return {"status": "ok", "message": "Datenbank erfolgreich wiederhergestellt!"}
 
 
 @app.get("/api/backup/json")
