@@ -214,6 +214,12 @@ function renderDashboardKPIs(month) {
   const statusElem = document.getElementById('kpi-status');
   statusElem.textContent = month.status === 'closed' ? 'Abgeschlossen' : 'Offen';
   statusElem.style.color = month.status === 'closed' ? 'var(--text-muted)' : '#22c55e';
+
+  // Update month-action toggle button text
+  const toggleBtn = document.getElementById('action-toggle-close');
+  if (toggleBtn) {
+    toggleBtn.textContent = month.status === 'closed' ? '🔓 Monat wieder öffnen' : '🔒 Monat abschließen';
+  }
 }
 
 function renderTransfers(month) {
@@ -971,8 +977,38 @@ function setupEventListeners() {
     }
   };
 
+  // Month actions dropdown menu toggle
+  const monthActionsBtn = document.getElementById('btn-month-actions');
+  const monthActionsMenu = document.getElementById('month-actions-menu');
+
+  monthActionsBtn.onclick = (e) => {
+    e.stopPropagation();
+    const isShown = monthActionsMenu.style.display === 'flex';
+    monthActionsMenu.style.display = isShown ? 'none' : 'flex';
+  };
+
+  document.addEventListener('click', () => {
+    if (monthActionsMenu) monthActionsMenu.style.display = 'none';
+  });
+
+  document.getElementById('action-open-days').onclick = () => {
+    document.getElementById('btn-edit-days').click();
+  };
+
+  document.getElementById('action-copy-days').onclick = () => {
+    document.getElementById('btn-copy-days').click();
+  };
+
+  document.getElementById('action-new-payment').onclick = () => {
+    openPaymentModal();
+  };
+
+  document.getElementById('action-print').onclick = () => {
+    window.print();
+  };
+
   // Month actions (close / reopen)
-  document.getElementById('btn-month-actions').onclick = async () => {
+  document.getElementById('action-toggle-close').onclick = async () => {
     const month = await api(`/api/months/${state.currentMonth}`);
     if (month.status === 'open') {
       if (confirm(`Monat ${state.currentMonth} jetzt final abschließen? (Belege können danach nicht mehr editiert werden)`)) {

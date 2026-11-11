@@ -117,9 +117,18 @@
 
       <!-- Settlement Transfers -->
       <div class="card">
-        <div class="card-title">
+        <div class="card-title" style="overflow:visible;">
           <span>🤝 Wer zahlt wem?</span>
-          <button id="btn-month-actions" class="btn btn-secondary btn-sm">Monat-Aktionen ▾</button>
+          <div style="position:relative;">
+            <button id="btn-month-actions" class="btn btn-secondary btn-sm">Monat-Aktionen ▾</button>
+            <div id="month-actions-menu" class="dropdown-menu" style="display:none;">
+              <button class="dropdown-item" id="action-toggle-close">🔒 Monat abschließen</button>
+              <button class="dropdown-item" id="action-open-days">📅 Tage anpassen</button>
+              <button class="dropdown-item" id="action-copy-days">📋 Vormonatstage übernehmen</button>
+              <button class="dropdown-item" id="action-new-payment">💶 Zahlung erfassen</button>
+              <button class="dropdown-item" id="action-print">🖨️ Druckansicht / Export</button>
+            </div>
+          </div>
         </div>
         <div id="transfer-list" class="transfer-list">
           <div style="color:var(--text-muted); font-size:0.9rem; padding:8px;">Alles ausgeglichen oder noch keine Belege.</div>
